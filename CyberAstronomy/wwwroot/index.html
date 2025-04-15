@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Кибер-Астроном: Наблюдение за космосом</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .server-item { margin-bottom: 10px; }
+        .logs { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+<h1>Кибер-Астроном</h1>
+
+<!-- Раздел для управления TCP-серверами -->
+<div>
+    <h3>Управление серверами (TCP)</h3>
+    <div id="serverList"></div>
+    <input type="text" id="serverAddress" placeholder="IP:порт">
+    <button id="addServerBtn">Добавить сервер</button>
+</div>
+
+<!-- Раздел для отображения логов -->
+<div>
+    <h3>Логи и обновления</h3>
+    <div class="logs" id="eventLog"></div>
+</div>
+
+<!-- Подключение SignalR (WebSocket) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    const eventLog = document.getElementById('eventLog');
+
+    function addLog(message) {
+        const time = new Date().toLocaleTimeString();
+        const fullMessage = `[${time}] ${message}`;
+        eventLog.innerHTML += fullMessage + '<br />';
+        // Сохранение истории (например, в localStorage)
+        let logs = JSON.parse(localStorage.getItem('eventLogs') || '[]');
+        logs.push(fullMessage);
+        if (logs.length > 50) logs.shift();
+        localStorage.setItem('eventLogs', JSON.stringify(logs));
+    }
+
+    // Восстановление логов при загрузке страницы
+    window.onload = () => {
+        let logs = JSON.parse(localStorage.getItem('eventLogs') || '[]');
+        logs.forEach(log => addLog(log));
+    };
+
+    // Список серверов для TCP-подключения
+    const serverListEl = document.getElementById('serverList');
+    let servers = [];
+    document.getElementById('addServerBtn').addEventListener('click', () => {
+        const server = document.getElementById('serverAddress').value.trim();
+        if (server && !servers.includes(server)) {
+            servers.push(server);
+            renderServerList();
+        }
+    });
+
+    function renderServerList() {
+        serverListEl.innerHTML = '';
+        servers.forEach((srv, index) => {
+            let div = document.createElement('div');
+            div.className = 'server-item';
+            div.innerHTML = `${srv} 
+          <button onclick="removeServer(${index})">Удалить</button>
+          <button onclick="connectToServer('${srv}')">Подключиться</button>`;
+            serverListEl.appendChild(div);
+        });
+    }
+
+    function removeServer(index) {
+        servers.splice(index, 1);
+        renderServerList();
+    }
+
+    // Реальное TCP-подключение через fetch или WebSocket невозможно из браузера,
+    // поэтому для TCP мы можем создать REST API на бэке для теста или использовать telnet.
+    // Здесь демонстрация логики подключения.
+    async function connectToServer(server) {
+        addLog(`Подключение к серверу ${server} по TCP...`);
+        const sessionId = crypto.randomUUID();
+        // Пример: вызов REST API, который перенаправит на TCP-соединение (если реализовано)
+        // fetch(`http://${server}/api/connect`, { method: "POST", body: JSON.stringify({ sessionId }) })
+        //   .then(response => response.text()).then(data => addLog(`Ответ сервера: ${data}`));
+        // Для демонстрации логики:
+        setTimeout(() => addLog(`Подключение к ${server} установлено. Сессия: ${sessionId}`), 500);
+    }
+
+    // Подключение к SignalR для приёма данных WebSocket
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/newObjectHub")
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on("ReceiveNewObject", message => {
+        addLog("Новый объект: " + message);
+    });
+
+    connection.on("ReceiveEvent", message => {
+        addLog("Событие: " + message);
+    });
+
+    connection.on("ReceiveUdpData", message => {
+        addLog("UDP данные: " + message);
+    });
+
+    connection.start().catch(err => console.error(err));
+</script>
+</body>
+</html>
