@@ -17,7 +17,7 @@ public class EventNotifierBackgroundService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             await _notifier.NotifyEventAsync();
-            await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }
 }

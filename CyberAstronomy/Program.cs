@@ -10,9 +10,9 @@ builder.Services.AddSignalR();
 
 // Регистрируем фоновые сервисы
 builder.Services.AddHostedService<TCPServerBackgroundService>();
-builder.Services.AddHostedService<UdpForwarderService>();
 builder.Services.AddHostedService<NewObjectGeneratorBackgroundService>();
 builder.Services.AddHostedService<EventNotifierBackgroundService>();
+builder.Services.AddHostedService<UdpDataServerBackgroundService>();
 
 var app = builder.Build();
 
